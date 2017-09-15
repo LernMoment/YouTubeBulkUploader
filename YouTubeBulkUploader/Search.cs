@@ -49,11 +49,7 @@ namespace YouTubeBulkUploader
 
         private async Task Run()
         {
-            var youtubeService = new YouTubeService(new BaseClientService.Initializer()
-            {
-                ApiKey = "REPLACE_ME",
-                ApplicationName = this.GetType().ToString()
-            });
+            YouTubeService youtubeService = await AuthenticateWithYouTubeAsync();
 
             var searchListRequest = youtubeService.Search.List("snippet");
             searchListRequest.Q = "LernMoment"; // Replace with your search term.
@@ -89,6 +85,27 @@ namespace YouTubeBulkUploader
             Console.WriteLine(String.Format("Videos:\n{0}\n", string.Join("\n", videos)));
             Console.WriteLine(String.Format("Channels:\n{0}\n", string.Join("\n", channels)));
             Console.WriteLine(String.Format("Playlists:\n{0}\n", string.Join("\n", playlists)));
+        }
+
+        private async Task<YouTubeService> AuthenticateWithYouTubeAsync()
+        {
+            UserCredential credentials;
+            YouTubeService service;
+
+            using (FileStream fileStream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
+            {
+                 credentials = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(fileStream).Secrets,
+                    new[] { YouTubeService.Scope.YoutubeReadonly, YouTubeService.Scope.YoutubeUpload },
+                    "user",
+                    CancellationToken.None);
+            }
+
+            return new YouTubeService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credentials,
+                ApplicationName = this.GetType().ToString()
+            });
         }
     }
 }
