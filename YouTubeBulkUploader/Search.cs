@@ -90,7 +90,6 @@ namespace YouTubeBulkUploader
         private async Task<YouTubeService> AuthenticateWithYouTubeAsync()
         {
             UserCredential credentials;
-            YouTubeService service;
 
             using (FileStream fileStream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
             {
