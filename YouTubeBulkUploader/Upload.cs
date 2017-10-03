@@ -28,7 +28,7 @@ namespace YouTubeBulkUploader
         [STAThread]
         static void Main(string[] args)
         {
-            Console.WriteLine("YouTube Data API: Search");
+            Console.WriteLine("YouTube Data API: Upload");
             Console.WriteLine("========================");
 
             try
