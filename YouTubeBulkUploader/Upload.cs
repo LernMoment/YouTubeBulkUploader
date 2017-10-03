@@ -76,7 +76,7 @@ namespace YouTubeBulkUploader
             switch (progress.Status)
             {
                 case UploadStatus.Uploading:
-                    Console.WriteLine($"{progress.BytesSent} Bytes bereits hochgeladen");
+                    Console.WriteLine($"{progress.BytesSent / 1024} KB bereits hochgeladen");
                     break;
                 case UploadStatus.Failed:
                     Console.WriteLine($"Fehler beim Upload: {progress.Exception}");
