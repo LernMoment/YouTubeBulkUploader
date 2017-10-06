@@ -1,64 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Google.Apis.Auth.OAuth2;
+﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Upload;
-using Google.Apis.Util.Store;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using static Google.Apis.YouTube.v3.VideosResource;
 
 namespace YouTubeBulkUploader
 {
-    /// <summary>
-    /// YouTube Data API v3 sample: search by keyword.
-    /// Relies on the Google APIs Client Library for .NET, v1.7.0 or higher.
-    /// See https://developers.google.com/api-client-library/dotnet/get_started
-    ///
-    /// Set ApiKey to the API key value from the APIs & auth > Registered apps tab of
-    ///   https://cloud.google.com/console
-    /// Please ensure that you have enabled the YouTube Data API for your project.
-    /// </summary>
-    public class Upload
+    class UploadTask
     {
-        [STAThread]
-        static void Main(string[] args)
-        {
-            Console.WriteLine("YouTube Data API: Upload");
-            Console.WriteLine("========================");
-
-            var filename = "BuupTestVideo.mp4";
-
-            try
-            {
-                new Upload(filename).Run().Wait();
-            }
-            catch (AggregateException ex)
-            {
-                foreach (var e in ex.InnerExceptions)
-                {
-                    Console.WriteLine("Error: " + e.Message);
-                }
-            }
-
-            Console.WriteLine("Press any key to continue...");
-            Console.ReadKey();
-        }
-
         private string fileName;
         private YouTubeService youTubeService = null;
 
-        public Upload(string filename)
+        public UploadTask(string filename)
         {
             this.fileName = filename;
         }
 
-        private async Task Run()
+        public async Task Run()
         {
             youTubeService = await AuthenticateWithYouTubeAsync();
 
@@ -123,11 +86,11 @@ namespace YouTubeBulkUploader
 
             using (FileStream fileStream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
             {
-                 credentials = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.Load(fileStream).Secrets,
-                    new[] { YouTubeService.Scope.YoutubeUpload },
-                    "user",
-                    CancellationToken.None);
+                credentials = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                   GoogleClientSecrets.Load(fileStream).Secrets,
+                   new[] { YouTubeService.Scope.YoutubeUpload },
+                   "user",
+                   CancellationToken.None);
             }
 
             return new YouTubeService(new BaseClientService.Initializer()
@@ -137,5 +100,6 @@ namespace YouTubeBulkUploader
                 ApplicationName = "YouTubeUploader"
             });
         }
+
     }
 }
