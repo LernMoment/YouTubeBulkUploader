@@ -11,6 +11,7 @@ using Google.Apis.Upload;
 using Google.Apis.Util.Store;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
+using static Google.Apis.YouTube.v3.VideosResource;
 
 namespace YouTubeBulkUploader
 {
@@ -31,9 +32,11 @@ namespace YouTubeBulkUploader
             Console.WriteLine("YouTube Data API: Upload");
             Console.WriteLine("========================");
 
+            var filename = "BuupTestVideo.mp4";
+
             try
             {
-                new Upload().Run().Wait();
+                new Upload(filename).Run().Wait();
             }
             catch (AggregateException ex)
             {
@@ -47,28 +50,51 @@ namespace YouTubeBulkUploader
             Console.ReadKey();
         }
 
+        private string fileName;
+        private YouTubeService youTubeService = null;
+
+        public Upload(string filename)
+        {
+            this.fileName = filename;
+        }
+
         private async Task Run()
         {
-            YouTubeService youtubeService = await AuthenticateWithYouTubeAsync();
+            youTubeService = await AuthenticateWithYouTubeAsync();
 
+            Video video = CreateVideoObjectWithMetaData();
+
+            await UploadAsync(video);
+        }
+
+        private async Task UploadAsync(Video video)
+        {
+            using (var fs = new FileStream(fileName, FileMode.Open))
+            {
+                InsertMediaUpload videoInsertRequest = CreateInsertRequest(video, fs);
+
+                await videoInsertRequest.UploadAsync();
+            }
+        }
+
+        private InsertMediaUpload CreateInsertRequest(Video video, FileStream fs)
+        {
+            var videoInsertRequest = youTubeService.Videos.Insert(video, "snippet,status", fs, "video/*");
+            videoInsertRequest.ProgressChanged += VideosInsertRequest_ProgressChanged;
+            videoInsertRequest.ResponseReceived += VideosInsertRequest_ResponseReceived;
+            videoInsertRequest.ChunkSize = 8 * 256 * 1024; //2MB in bytes
+            return videoInsertRequest;
+        }
+
+        private static Video CreateVideoObjectWithMetaData()
+        {
             var video = new Video();
             video.Snippet = new VideoSnippet();
             video.Snippet.Title = "Erstes Video vom Buup!";
             video.Snippet.Description = "Den Quellcode dazu findest du unter: https://github.com/LernMoment/YouTubeBulkUploader";
             video.Status = new VideoStatus();
             video.Status.PrivacyStatus = "unlisted"; // or "private" or "public"
-
-            var filename = "BuupTestVideo.mp4";
-
-            using (var fs = new FileStream(filename, FileMode.Open))
-            {
-                var videoInsertRequest = youtubeService.Videos.Insert(video, "snippet,status", fs, "video/*");
-                videoInsertRequest.ProgressChanged += VideosInsertRequest_ProgressChanged;
-                videoInsertRequest.ResponseReceived += VideosInsertRequest_ResponseReceived;
-                videoInsertRequest.ChunkSize = 8 * 256 * 1024; //2MB in bytes
-
-                await videoInsertRequest.UploadAsync();
-            }
+            return video;
         }
 
         private void VideosInsertRequest_ProgressChanged(IUploadProgress progress)
