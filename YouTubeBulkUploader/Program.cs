@@ -30,8 +30,8 @@ namespace YouTubeBulkUploader
         [STAThread]
         static void Main(string[] args)
         {
-            Console.WriteLine("YouTube Data API: Upload");
-            Console.WriteLine("========================");
+            Console.WriteLine("Der YouTube BuUp - YouTube Bulk Uploader");
+            Console.WriteLine("========================================");
 
             YouTubeService ytService = AuthenticateWithYouTube();
 
