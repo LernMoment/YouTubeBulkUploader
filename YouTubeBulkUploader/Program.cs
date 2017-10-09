@@ -33,13 +33,15 @@ namespace YouTubeBulkUploader
             Console.WriteLine("YouTube Data API: Upload");
             Console.WriteLine("========================");
 
+            YouTubeService ytService = AuthenticateWithYouTube();
+
             List<VideoDescription> descriptions = LoadVideoDescriptionsFromJson("VideosToUpload.json");
 
             foreach (VideoDescription videoDesc in descriptions)
             {
                 try
                 {
-                    new UploadTask(videoDesc.FileName, videoDesc.Receiver).Run().Wait();
+                    new UploadTask(ytService, videoDesc.FileName, videoDesc.Receiver).Run().Wait();
                 }
                 catch (AggregateException ex)
                 {
@@ -54,10 +56,39 @@ namespace YouTubeBulkUploader
             Console.ReadKey();
         }
 
+        private static YouTubeService AuthenticateWithYouTube()
+        {
+            Task<YouTubeService> authenticationTask = AuthenticateWithYouTubeAsync();
+            authenticationTask.Wait();
+            return authenticationTask.Result;
+        }
+
         private static List<VideoDescription> LoadVideoDescriptionsFromJson(string filename)
         {
             string jsonFileContent = File.ReadAllText(filename);
             return JsonConvert.DeserializeObject<List<VideoDescription>>(jsonFileContent);
         }
+
+        private static async Task<YouTubeService> AuthenticateWithYouTubeAsync()
+        {
+            UserCredential credentials;
+
+            using (FileStream fileStream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
+            {
+                credentials = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                   GoogleClientSecrets.Load(fileStream).Secrets,
+                   new[] { YouTubeService.Scope.YoutubeUpload },
+                   "user",
+                   CancellationToken.None);
+            }
+
+            return new YouTubeService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credentials,
+                GZipEnabled = true,
+                ApplicationName = "YouTubeUploader"
+            });
+        }
+
     }
 }

@@ -17,16 +17,15 @@ namespace YouTubeBulkUploader
         private string receiver;
         private YouTubeService youTubeService = null;
 
-        public UploadTask(string filename, string receiver)
+        public UploadTask(YouTubeService service, string filename, string receiver)
         {
+            this.youTubeService = service;
             this.fileName = filename;
             this.receiver = receiver;
         }
 
         public async Task Run()
         {
-            youTubeService = await AuthenticateWithYouTubeAsync();
-
             Video video = CreateVideoObjectWithMetaData();
 
             await UploadAsync(video);
@@ -80,27 +79,6 @@ namespace YouTubeBulkUploader
         private void VideosInsertRequest_ResponseReceived(Video video)
         {
             Console.WriteLine($"Upload erfolgreich beendet! Das Video hat die Id: {video.Id}");
-        }
-
-        private async Task<YouTubeService> AuthenticateWithYouTubeAsync()
-        {
-            UserCredential credentials;
-
-            using (FileStream fileStream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
-            {
-                credentials = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                   GoogleClientSecrets.Load(fileStream).Secrets,
-                   new[] { YouTubeService.Scope.YoutubeUpload },
-                   "user",
-                   CancellationToken.None);
-            }
-
-            return new YouTubeService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = credentials,
-                GZipEnabled = true,
-                ApplicationName = "YouTubeUploader"
-            });
         }
 
     }
