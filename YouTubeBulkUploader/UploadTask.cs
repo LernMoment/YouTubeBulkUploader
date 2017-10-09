@@ -14,11 +14,13 @@ namespace YouTubeBulkUploader
     class UploadTask
     {
         private string fileName;
+        private string receiver;
         private YouTubeService youTubeService = null;
 
-        public UploadTask(string filename)
+        public UploadTask(string filename, string receiver)
         {
             this.fileName = filename;
+            this.receiver = receiver;
         }
 
         public async Task Run()
@@ -49,12 +51,12 @@ namespace YouTubeBulkUploader
             return videoInsertRequest;
         }
 
-        private static Video CreateVideoObjectWithMetaData()
+        private Video CreateVideoObjectWithMetaData()
         {
             var video = new Video();
             video.Snippet = new VideoSnippet();
-            video.Snippet.Title = "Erstes Video vom Buup!";
-            video.Snippet.Description = "Den Quellcode dazu findest du unter: https://github.com/LernMoment/YouTubeBulkUploader";
+            video.Snippet.Title = $"Hallo {receiver} - Willkommen im C# Kurs!";
+            video.Snippet.Description = "Weitere Informationen rund um C# und Softwareentwicklung findest du unter www.LernMoment.de";
             video.Status = new VideoStatus();
             video.Status.PrivacyStatus = "unlisted"; // or "private" or "public"
             return video;

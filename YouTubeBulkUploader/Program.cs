@@ -32,17 +32,25 @@ namespace YouTubeBulkUploader
             Console.WriteLine("YouTube Data API: Upload");
             Console.WriteLine("========================");
 
-            var filename = "BuupTestVideo.mp4";
+            var filename = "VideosToUpload.txt";
+            string[] uploads = File.ReadAllLines(filename);
+            
+            foreach (string videoDescription in uploads)
+            {
+                string[] metaData = videoDescription.Split(',');
+                string receiver = metaData[0];
+                string videoFileName = metaData[1];
 
-            try
-            {
-                new UploadTask(filename).Run().Wait();
-            }
-            catch (AggregateException ex)
-            {
-                foreach (var e in ex.InnerExceptions)
+                try
                 {
-                    Console.WriteLine("Error: " + e.Message);
+                    new UploadTask(videoFileName, receiver).Run().Wait();
+                }
+                catch (AggregateException ex)
+                {
+                    foreach (var e in ex.InnerExceptions)
+                    {
+                        Console.WriteLine("Error: " + e.Message);
+                    }
                 }
             }
 
