@@ -13,15 +13,14 @@ namespace YouTubeBulkUploader
 {
     class UploadTask
     {
-        private string fileName;
+        private VideoDescription videoMetaData;
         private string receiver;
         private YouTubeService youTubeService = null;
 
-        public UploadTask(YouTubeService service, string filename, string receiver)
+        public UploadTask(YouTubeService service, VideoDescription desc)
         {
             this.youTubeService = service;
-            this.fileName = filename;
-            this.receiver = receiver;
+            this.videoMetaData = desc;
         }
 
         public async Task Run()
@@ -33,7 +32,7 @@ namespace YouTubeBulkUploader
 
         private async Task UploadAsync(Video video)
         {
-            using (var fs = new FileStream(fileName, FileMode.Open))
+            using (var fs = new FileStream(videoMetaData.FileName, FileMode.Open))
             {
                 InsertMediaUpload videoInsertRequest = CreateInsertRequest(video, fs);
 
@@ -54,7 +53,7 @@ namespace YouTubeBulkUploader
         {
             var video = new Video();
             video.Snippet = new VideoSnippet();
-            video.Snippet.Title = $"Hallo {receiver} - Willkommen im C# Kurs!";
+            video.Snippet.Title = $"Hallo {videoMetaData.Receiver} - Willkommen im C# Kurs!";
             video.Snippet.Description = "Weitere Informationen rund um C# und Softwareentwicklung findest du unter www.LernMoment.de";
             video.Status = new VideoStatus();
             video.Status.PrivacyStatus = "unlisted"; // or "private" or "public"

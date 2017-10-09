@@ -41,7 +41,7 @@ namespace YouTubeBulkUploader
             {
                 try
                 {
-                    new UploadTask(ytService, videoDesc.FileName, videoDesc.Receiver).Run().Wait();
+                    new UploadTask(ytService, videoDesc).Run().Wait();
                 }
                 catch (AggregateException ex)
                 {
