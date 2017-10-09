@@ -12,6 +12,7 @@ using Google.Apis.Util.Store;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 using static Google.Apis.YouTube.v3.VideosResource;
+using Newtonsoft.Json;
 
 namespace YouTubeBulkUploader
 {
@@ -32,18 +33,13 @@ namespace YouTubeBulkUploader
             Console.WriteLine("YouTube Data API: Upload");
             Console.WriteLine("========================");
 
-            var filename = "VideosToUpload.txt";
-            string[] uploads = File.ReadAllLines(filename);
-            
-            foreach (string videoDescription in uploads)
-            {
-                string[] metaData = videoDescription.Split(',');
-                string receiver = metaData[0];
-                string videoFileName = metaData[1];
+            List<VideoDescription> descriptions = LoadVideoDescriptionsFromJson("VideosToUpload.json");
 
+            foreach (VideoDescription videoDesc in descriptions)
+            {
                 try
                 {
-                    new UploadTask(videoFileName, receiver).Run().Wait();
+                    new UploadTask(videoDesc.FileName, videoDesc.Receiver).Run().Wait();
                 }
                 catch (AggregateException ex)
                 {
@@ -56,6 +52,12 @@ namespace YouTubeBulkUploader
 
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
+        }
+
+        private static List<VideoDescription> LoadVideoDescriptionsFromJson(string filename)
+        {
+            string jsonFileContent = File.ReadAllText(filename);
+            return JsonConvert.DeserializeObject<List<VideoDescription>>(jsonFileContent);
         }
     }
 }
