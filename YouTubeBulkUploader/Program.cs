@@ -41,7 +41,11 @@ namespace YouTubeBulkUploader
             {
                 try
                 {
-                    new UploadTask(ytService, videoDesc).Run().Wait();
+                    UploadTask upload = new UploadTask(ytService, videoDesc);
+                    upload.Run().Wait();
+
+                    string messageToReceiver = CreateTextMessageForReceiver(videoDesc, upload);
+                    PrintTextMessageToConsole(messageToReceiver);
                 }
                 catch (AggregateException ex)
                 {
@@ -54,6 +58,27 @@ namespace YouTubeBulkUploader
 
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
+        }
+
+        private static void PrintTextMessageToConsole(string messageToReceiver)
+        {
+            Console.WriteLine("Generierte Nachricht für den Empfänger der Videonachricht:");
+            Console.WriteLine(messageToReceiver);
+            Console.WriteLine();
+        }
+
+        private static string CreateTextMessageForReceiver(VideoDescription videoDesc, UploadTask upload)
+        {
+            string messageToReceiver = $"Hallo {videoDesc.Receiver}," + Environment.NewLine;
+            messageToReceiver += Environment.NewLine;
+            messageToReceiver += "super, dass du dich für meinen C# Kurs entschieden hast. In folgender persönlicher Videonachricht erkläre ich dir, wie du den Kurs für dich noch individueller nutzen kannst:";
+            messageToReceiver += Environment.NewLine;
+            messageToReceiver += upload.UrlOfUploadedVideo + Environment.NewLine;
+            messageToReceiver += Environment.NewLine;
+            messageToReceiver += "Viel Spaß und vor allem viel Erfolg mit dem Kurs" + Environment.NewLine;
+            messageToReceiver += Environment.NewLine;
+            messageToReceiver += "Jan von LernMoment.de";
+            return messageToReceiver;
         }
 
         private static YouTubeService AuthenticateWithYouTube()

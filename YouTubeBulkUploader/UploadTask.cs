@@ -23,6 +23,8 @@ namespace YouTubeBulkUploader
             this.videoMetaData = desc;
         }
 
+        public string UrlOfUploadedVideo { get; private set; }
+
         public async Task Run()
         {
             Video video = CreateVideoObjectWithMetaData();
@@ -78,6 +80,7 @@ namespace YouTubeBulkUploader
         private void VideosInsertRequest_ResponseReceived(Video video)
         {
             Console.WriteLine($"Upload erfolgreich beendet! Das Video hat die Id: {video.Id}");
+            UrlOfUploadedVideo = "https://youtu.be/" + video.Id;
         }
 
     }
