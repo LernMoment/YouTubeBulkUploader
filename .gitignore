@@ -7,7 +7,7 @@
 *.userosscache
 *.sln.docstates
 client_secret.json
-client_secret-Old.json
+VideosToUpload.json
 *.mp4
 
 # User-specific files (MonoDevelop/Xamarin Studio)
