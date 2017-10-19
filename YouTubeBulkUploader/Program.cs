@@ -33,6 +33,9 @@ namespace YouTubeBulkUploader
             Console.WriteLine("Der YouTube BuUp - YouTube Bulk Uploader");
             Console.WriteLine("========================================");
 
+            Console.WriteLine("Warte auf Verbindung des Remote-Debuggers (drücke Enter wenn okay)");
+            Console.ReadLine();
+
             YouTubeService ytService = AuthenticateWithYouTube();
 
             List<VideoDescription> descriptions = LoadVideoDescriptionsFromJson("VideosToUpload.json");
@@ -83,8 +86,11 @@ namespace YouTubeBulkUploader
 
         private static YouTubeService AuthenticateWithYouTube()
         {
+            Console.WriteLine("Erstelle Task für asynchrone Authentifizierung.");
             Task<YouTubeService> authenticationTask = AuthenticateWithYouTubeAsync();
+            Console.WriteLine("Warte auf asynchrone Authentifizierung");
             authenticationTask.Wait();
+            Console.WriteLine("Authentifizierung abgeschlossen");
             return authenticationTask.Result;
         }
 
@@ -98,13 +104,14 @@ namespace YouTubeBulkUploader
         {
             UserCredential credentials;
 
-            using (FileStream fileStream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
+            using (FileStream fileStream = new FileStream(@"client_secret.json", FileMode.Open, FileAccess.Read))
             {
                 credentials = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                    GoogleClientSecrets.Load(fileStream).Secrets,
                    new[] { YouTubeService.Scope.YoutubeUpload },
                    "user",
-                   CancellationToken.None);
+                   CancellationToken.None,
+                   new FileDataStore(@"C:\Data\Users\Administrator\Documents\buup\DataStore", true));
             }
 
             return new YouTubeService(new BaseClientService.Initializer()
