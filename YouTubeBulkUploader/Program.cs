@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
-using Google.Apis.Upload;
 using Google.Apis.Util.Store;
 using Google.Apis.YouTube.v3;
-using Google.Apis.YouTube.v3.Data;
-using static Google.Apis.YouTube.v3.VideosResource;
 using Newtonsoft.Json;
+
+using DeviceAuthorizationFlow;
 
 namespace YouTubeBulkUploader
 {
@@ -102,25 +100,40 @@ namespace YouTubeBulkUploader
 
         private static async Task<YouTubeService> AuthenticateWithYouTubeAsync()
         {
-            UserCredential credentials;
+            DeviceAuthorizationBroker broker = new DeviceAuthorizationBroker(@"client_secret.json");
+            IDataStore store = new FileDataStore(@"C:\Data\Users\Administrator\Documents\buup\DataStore", true);
+            UserCredential credential = await broker.TryUsingStoredAuthenticationInfos(store);
 
-            using (FileStream fileStream = new FileStream(@"client_secret.json", FileMode.Open, FileAccess.Read))
+            if (credential == null)
             {
-                credentials = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                   GoogleClientSecrets.Load(fileStream).Secrets,
-                   new[] { YouTubeService.Scope.YoutubeUpload },
-                   "user",
-                   CancellationToken.None,
-                   new FileDataStore(@"C:\Data\Users\Administrator\Documents\buup\DataStore", true));
+                AuthorizationCodes codes = await broker.RequestCodesAsync(
+                    new[] { YouTubeService.Scope.YoutubeUpload }
+                    );
+
+                DisplayUserCode(codes);
+
+                credential = await broker.WaitForAuthorizedCredentialsAsync(store);
             }
 
             return new YouTubeService(new BaseClientService.Initializer()
             {
-                HttpClientInitializer = credentials,
+                HttpClientInitializer = credential,
                 GZipEnabled = true,
                 ApplicationName = "YouTubeUploader"
             });
         }
 
+        private static void DisplayUserCode(AuthorizationCodes data)
+        {
+            Console.WriteLine();
+            if (data != null)
+            {
+                Console.WriteLine(data);
+            }
+            else
+            {
+                Console.WriteLine("No valid authorization response from server!");
+            }
+        }
     }
 }
