@@ -13,6 +13,8 @@ namespace YouTubeBulkUploader
 {
     class UploadTask
     {
+        private const int maxRetries = 3;
+
         private VideoDescription videoMetaData;
         private string receiver;
         private YouTubeService youTubeService = null;
@@ -38,7 +40,16 @@ namespace YouTubeBulkUploader
             {
                 InsertMediaUpload videoInsertRequest = CreateInsertRequest(video, fs);
 
-                await videoInsertRequest.UploadAsync();
+                IUploadProgress progress = await videoInsertRequest.UploadAsync(CancellationToken.None);
+
+                if (IsUploadResumable(progress))
+                {
+                    bool isCompleted = await ResumeUploadAsync(videoInsertRequest);
+                    if (!isCompleted)
+                    {
+                        Console.WriteLine($"Could not upload {videoMetaData.FileName}");
+                    }
+                }
             }
         }
 
@@ -60,6 +71,76 @@ namespace YouTubeBulkUploader
             video.Status = new VideoStatus();
             video.Status.PrivacyStatus = "unlisted"; // or "private" or "public"
             return video;
+        }
+
+        private bool IsUploadResumable(IUploadProgress uploadStatusInfo)
+        {
+            if (uploadStatusInfo.Status != UploadStatus.Failed)
+            {
+                // upload did not fail. so we shouldn't resume it!
+                return false;
+            }
+
+            bool isResumable = false;
+
+            Google.GoogleApiException apiException = uploadStatusInfo.Exception as Google.GoogleApiException;
+            if ((apiException == null) || (apiException.Error == null))
+            {
+                Console.WriteLine(string.Format("Upload Failed: {0}", uploadStatusInfo.Exception.Message));
+                isResumable = true;
+            }
+            else
+            {
+                Console.WriteLine(string.Format("Upload Failed: {0}", apiException.Error.ToString()));
+                // Do not retry if the request is in error
+                int StatusCode = (int)apiException.HttpStatusCode;
+                // See https://developers.google.com/youtube/v3/guides/using_resumable_upload_protocol
+                if ((StatusCode / 100) == 4 || ((StatusCode / 100) == 5 && !(StatusCode == 500 | StatusCode == 502 | StatusCode == 503 | StatusCode == 504)))
+                {
+                    isResumable = false;
+                }
+                else
+                {
+
+                    isResumable = true;
+                }
+            }
+
+            return isResumable;
+        }
+
+        private async Task<bool> ResumeUploadAsync(VideosResource.InsertMediaUpload videosInsertRequest)
+        {
+            bool isCompleted = false;
+            int retryCount = 0;
+
+            do
+            {
+                // Give network and server some time to resolve issue, if possible
+                await Task.Delay(3000);
+
+                // Try to resume upload
+                Console.WriteLine("Resuming upload!");
+                IUploadProgress progress = await videosInsertRequest.ResumeAsync(CancellationToken.None);
+
+                // check whether we are done
+                if (progress.Status == UploadStatus.Completed)
+                {
+                    retryCount = maxRetries;
+                    isCompleted = true;
+                }
+                else if (IsUploadResumable(progress))
+                {
+                    retryCount++;
+                }
+                else
+                {
+                    throw new NotImplementedException($"ResumeUpload returned state {progress.Status} which is currently not handled.");
+                }
+
+            } while ((retryCount < maxRetries) && !isCompleted);
+
+            return isCompleted;
         }
 
         private void VideosInsertRequest_ProgressChanged(IUploadProgress progress)
